@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spring Hill Department Schedule Maker - Faculty Colors</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --ink: #172033;
+      --muted: #5c667a;
+      --border: #d4dbe8;
+      --line: #e8edf5;
+      --primary: #2f5d7c;
+      --primary-soft: #e7f1f8;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --ok: #087443;
+      --warn: #a15c07;
+      --room-width: 76px;
+      --time-width: 78px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 17px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #2f5d7c, #244962);
+      color: white;
+      padding: 26px 22px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: 0.2px;
+    }
+
+    header p {
+      margin: 10px 0 0;
+      opacity: 0.94;
+      font-size: 17px;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 320px minmax(900px, 1fr);
+      gap: 12px;
+      padding: 12px;
+      max-width: 2200px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(16, 24, 40, 0.08);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      color: var(--ink);
+    }
+
+    .help-text, .note, .status {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      margin: 8px 0 0;
+    }
+
+    .status.ok { color: var(--ok); font-weight: 700; }
+    .status.warn { color: var(--warn); font-weight: 700; }
+    .status.danger { color: var(--danger); font-weight: 700; }
+
+    label {
+      font-size: 15px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    input[type="text"], input[type="color"], select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: white;
+      padding: 11px 12px;
+      font-size: 16px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    input[type="color"] {
+      height: 45px;
+      padding: 5px;
+    }
+
+    select optgroup {
+      font-size: 15px;
+      color: var(--primary);
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 11px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--primary);
+      color: white;
+    }
+
+    button.secondary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid #bdd5e5;
+    }
+
+    button.danger { background: var(--danger); }
+    button.success { background: var(--ok); }
+    button.small { padding: 6px 8px; font-size: 12px; border-radius: 8px; }
+    .item-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    button:hover { opacity: 0.93; }
+
+    .course-search-row {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .course-picker {
+      display: grid;
+      gap: 12px;
+    }
+
+    .course-group {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .course-group-title {
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .course-options {
+      padding: 9px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .course-check {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fafbfc;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .course-check input {
+      margin-top: 3px;
+      transform: scale(1.15);
+    }
+
+    .course-check .code {
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .course-check .title {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+
+    .course-check:has(input:checked) {
+      background: var(--primary-soft);
+      border-color: #9fc1d7;
+    }
+
+    .course-check:has(input:checked) .code { color: var(--primary); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.3fr) 100px minmax(220px, 1.1fr) minmax(280px, 1.35fr) 120px;
+      gap: 13px;
+      align-items: end;
+    }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 14px;
+      margin-top: 14px;
+      align-items: start;
+    }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      padding-top: 24px;
+    }
+
+    .color-swatch {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(23, 32, 51, 0.15);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7);
+      cursor: pointer;
+      padding: 0;
+      outline: 0;
+      position: relative;
+    }
+
+    .color-swatch.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(47, 93, 124, 0.22), inset 0 0 0 1px rgba(255,255,255,0.9);
+    }
+
+    .faculty-color-block {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfcfe;
+      padding: 14px;
+    }
+
+    .faculty-color-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .faculty-color-head h3 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    .faculty-color-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 9px;
+    }
+
+    .faculty-color-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+
+    .faculty-color-item input[type="color"] {
+      width: 44px;
+      height: 38px;
+      padding: 2px;
+      border-radius: 10px;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .faculty-color-item .name {
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.1;
+    }
+
+    .faculty-color-item .last {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 84vh;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 4px 16px rgba(16, 24, 40, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .linear-schedule {
+      width: max-content;
+      min-width: 100%;
+      background: white;
+    }
+
+    .schedule-header {
+      display: grid;
+      width: max-content;
+      min-width: 100%;
+      grid-template-rows: 34px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: white;
+    }
+
+    .header-cell {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .header-cell.room-head {
+      grid-row: 2;
+      background: #f6f8fb;
+      color: var(--ink);
+      font-style: italic;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .header-cell.time-head-linear {
+      position: sticky;
+      left: 0;
+      z-index: 70;
+    }
+
+    .header-cell.day-sep, .room-column.day-sep {
+      border-left: 3px solid #b8c2cc;
+    }
+
+    .schedule-body {
+      position: relative;
+      display: grid;
+      width: max-content;
+      min-width: 100%;
+      overflow: hidden;
+      background: white;
+    }
+
+    .time-axis, .room-column {
+      position: relative;
+      height: var(--body-height);
+      border-right: 1px solid var(--border);
+      z-index: 2;
+    }
+
+    .time-axis {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      background: #fafafa;
+      border-right: 1px solid var(--border);
+    }
+
+    .room-column { background: transparent; }
+
+    .time-rule {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 0;
+      border-top: 1px solid #e7edf5;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .time-rule.hour-rule { border-top: 2px solid #c4ccd9; }
+    .time-rule.slot-rule { border-top-style: dashed; }
+
+    .time-label {
+      position: absolute;
+      right: 5px;
+      transform: translateY(-50%);
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+      background: #fafafa;
+      padding: 2px 0 2px 5px;
+      z-index: 3;
+    }
+
+    .time-label.hour-label {
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 13px;
+    }
+
+    .event {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      border-radius: 6px;
+      padding: 3px 4px;
+      color: #111827;
+      font-size: 12px;
+      line-height: 1.16;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.09), 0 1px 3px rgba(16,24,40,0.08);
+      border: 2px solid transparent;
+      z-index: 5;
+    }
+
+    .event strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event .faculty { font-weight: 700; font-size: 12px; }
+    .event .course-title, .event .slot-line { display: none; }
+    .event { cursor: pointer; }
+
+    .event.compact .course-title { display: none; }
+
+    .event.conflict {
+      border-color: var(--danger);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7), 0 0 0 2px rgba(180,35,24,0.15);
+    }
+
+    .conflict-note {
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .side-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .pill, .scheduled-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fafbfc;
+      font-size: 14px;
+    }
+
+    .pill strong, .scheduled-item strong { font-size: 15px; }
+    .subtext { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.3; }
+
+    .scheduled-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-left: 9px solid var(--primary);
+    }
+
+    .scheduled-item.conflict-card {
+      background: var(--danger-soft);
+      border-color: rgba(180, 35, 24, 0.35);
+    }
+
+    .empty { color: var(--muted); margin: 0; font-size: 15px; }
+
+    .summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .metric {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .metric strong { color: var(--ink); }
+
+    @media (max-width: 1200px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; max-height: none; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .color-row { grid-template-columns: 1fr; }
+      .palette { padding-top: 0; }
+    }
+
+    @media (max-width: 750px) {
+      header h1 { font-size: 26px; }
+      .app-shell { padding: 10px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: white; }
+      header, .sidebar, .controls, .buttons, .note, .status, .summary-row { display: none !important; }
+      .app-shell { display: block; padding: 0; max-width: none; }
+      .table-wrap { box-shadow: none; border: none; max-height: none; overflow: visible; }
+      .linear-schedule { transform: scale(0.72); transform-origin: top left; }
+      @page { size: landscape; margin: 0.25in; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Spring Hill Department Schedule Maker</h1>
+    <p>Select offered courses, assign sections, and view a compact room schedule with faculty-based colors.</p>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="panel controls">
+        <h2>Courses Offered</h2>
+        <div class="course-search-row">
+          <div>
+            <label for="courseSearch">Search courses</label>
+            <input id="courseSearch" type="text" placeholder="Search MTH 121, data, physics..." />
+          </div>
+        </div>
+        <div class="buttons">
+          <button type="button" class="secondary" onclick="selectAllCourses()">Select All</button>
+          <button type="button" class="secondary" onclick="selectDepartment('MTH')">MTH</button>
+          <button type="button" class="secondary" onclick="selectDepartment('CSC')">CSC</button>
+          <button type="button" class="secondary" onclick="selectDepartment('DSC')">DSC</button>
+          <button type="button" class="secondary" onclick="selectDepartment('PHY')">PHY</button>
+          <button type="button" class="danger" onclick="clearCourses()">Clear</button>
+        </div>
+        <p id="courseStatus" class="status">No courses selected yet.</p>
+        <div id="coursePicker" class="course-picker" style="margin-top:12px;"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Selected Courses</h2>
+        <div id="offeredList" class="side-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Scheduled Sections</h2>
+        <div id="scheduledList" class="side-list"></div>
+      </section>
+    </aside>
+
+    <main>
+      <section class="panel controls">
+        <h2>Add Section to Schedule</h2>
+        <form id="addForm" class="form-grid">
+          <div>
+            <label for="courseSelect">Course</label>
+            <select id="courseSelect" required></select>
+          </div>
+          <div>
+            <label for="sectionInput">Section</label>
+            <input id="sectionInput" type="text" value="01" placeholder="01" />
+          </div>
+          <div>
+            <label for="facultySelect">Faculty</label>
+            <select id="facultySelect" required></select>
+          </div>
+          <div>
+            <label for="slotSelect">Time slot</label>
+            <select id="slotSelect" required></select>
+          </div>
+          <div>
+            <label for="roomSelect">Room</label>
+            <select id="roomSelect" required></select>
+          </div>
+        </form>
+
+        <div class="faculty-color-block">
+          <div class="faculty-color-head">
+            <h3>Faculty Colors</h3>
+            <button type="button" class="secondary small" onclick="resetFacultyColors()">Reset Pastels</button>
+          </div>
+          <p class="help-text" style="margin-top:0;">Colors are assigned by faculty. Any section taught by the same faculty member uses the same color.</p>
+          <div id="facultyColorControls" class="faculty-color-controls"></div>
+        </div>
+
+        <div class="buttons">
+          <button id="submitScheduleBtn" type="submit" form="addForm">Add Section</button>
+          <button id="cancelEditBtn" type="button" class="secondary" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
+          <button type="button" class="secondary" onclick="exportScheduleCsv()">Export CSV</button>
+          <button type="button" class="secondary" onclick="window.print()">Print / Save PDF</button>
+          <button type="button" class="danger" onclick="clearSchedule()">Clear Schedule</button>
+        </div>
+        <p id="scheduleStatus" class="status">No scheduled courses yet. Click a block or use the list to edit/delete.</p>
+        <div class="summary-row">
+          <div class="metric"><strong>View:</strong> code + faculty last name; colors = faculty</div>
+          <div class="metric"><strong>Rooms:</strong> BL030, BL031, BL103, BL116, BL227</div>
+          <div class="metric"><strong>Labs:</strong> 1:45-4:45 PM on any day</div>
+        </div>
+      </section>
+
+      <div class="table-wrap">
+        <div class="linear-schedule" id="scheduleTable"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const courseCatalog = [
+      {
+            "code": "MTH100",
+            "displayCode": "MTH 100",
+            "title": "Intermediate Algebra",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth100"
+      },
+      {
+            "code": "MTH103",
+            "displayCode": "MTH 103",
+            "title": "Contemporary Mathematics",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth103"
+      },
+      {
+            "code": "MTH111",
+            "displayCode": "MTH 111",
+            "title": "Precalculus with Trigonometry",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth111"
+      },
+      {
+            "code": "MTH121",
+            "displayCode": "MTH 121",
+            "title": "Calculus I",
+            "credits": "4",
+            "department": "MTH",
+            "id": "course-mth121"
+      },
+      {
+            "code": "MTH122",
+            "displayCode": "MTH 122",
+            "title": "Calculus II",
+            "credits": "4",
+            "department": "MTH",
+            "id": "course-mth122"
+      },
+      {
+            "code": "MTH163",
+            "displayCode": "MTH 163",
+            "title": "Basic Statistics for the Sciences",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth163"
+      },
+      {
+            "code": "MTH221",
+            "displayCode": "MTH 221",
+            "title": "Linear Algebra",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth221"
+      },
+      {
+            "code": "MTH223",
+            "displayCode": "MTH 223",
+            "title": "Calculus III",
+            "credits": "4",
+            "department": "MTH",
+            "id": "course-mth223"
+      },
+      {
+            "code": "MTH261",
+            "displayCode": "MTH 261",
+            "title": "Differential Equations",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth261"
+      },
+      {
+            "code": "MTH301",
+            "displayCode": "MTH 301",
+            "title": "Introduction to Abstract Mathematics",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth301"
+      },
+      {
+            "code": "MTH311",
+            "displayCode": "MTH 311",
+            "title": "Numerical Methods",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth311"
+      },
+      {
+            "code": "MTH322",
+            "displayCode": "MTH 322",
+            "title": "Discrete Mathematics",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth322"
+      },
+      {
+            "code": "MTH365",
+            "displayCode": "MTH 365",
+            "title": "Probability and Statistics",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth365"
+      },
+      {
+            "code": "MTH423",
+            "displayCode": "MTH 423",
+            "title": "Cryptography",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth423"
+      },
+      {
+            "code": "MTH451",
+            "displayCode": "MTH 451",
+            "title": "Basic Real Analysis",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth451"
+      },
+      {
+            "code": "MTH464",
+            "displayCode": "MTH 464",
+            "title": "Complex Variables",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth464"
+      },
+      {
+            "code": "MTH465",
+            "displayCode": "MTH 465",
+            "title": "Problem Solving in Actuarial Science",
+            "credits": "1-3",
+            "department": "MTH",
+            "id": "course-mth465"
+      },
+      {
+            "code": "MTH482",
+            "displayCode": "MTH 482",
+            "title": "Abstract Algebra",
+            "credits": "3",
+            "department": "MTH",
+            "id": "course-mth482"
+      },
+      {
+            "code": "CSC100",
+            "displayCode": "CSC 100",
+            "title": "Computer Science 0: Foundations",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc100"
+      },
+      {
+            "code": "CSC101",
+            "displayCode": "CSC 101",
+            "title": "Computer Science 1: Principles",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc101"
+      },
+      {
+            "code": "CSC202",
+            "displayCode": "CSC 202",
+            "title": "Computer Science 2: Data Structures",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc202"
+      },
+      {
+            "code": "CSC203",
+            "displayCode": "CSC 203",
+            "title": "Computer Science 3: Algorithms",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc203"
+      },
+      {
+            "code": "CSC210",
+            "displayCode": "CSC 210",
+            "title": "Computer Architecture",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc210"
+      },
+      {
+            "code": "CSC311",
+            "displayCode": "CSC 311",
+            "title": "Operating Systems: Design and Implementation",
+            "credits": "4",
+            "department": "CSC",
+            "id": "course-csc311"
+      },
+      {
+            "code": "CSC312",
+            "displayCode": "CSC 312",
+            "title": "Database Systems and Theory",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc312"
+      },
+      {
+            "code": "CSC315",
+            "displayCode": "CSC 315",
+            "title": "Cloud Computing and Development Operations",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc315"
+      },
+      {
+            "code": "CSC320",
+            "displayCode": "CSC 320",
+            "title": "Automata",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc320"
+      },
+      {
+            "code": "CSC321",
+            "displayCode": "CSC 321",
+            "title": "Programming Language Theory",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc321"
+      },
+      {
+            "code": "CSC341",
+            "displayCode": "CSC 341",
+            "title": "Data Science 1",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc341"
+      },
+      {
+            "code": "CSC414",
+            "displayCode": "CSC 414",
+            "title": "Networking and Network Security",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc414"
+      },
+      {
+            "code": "CSC443",
+            "displayCode": "CSC 443",
+            "title": "Cryptography",
+            "credits": "3",
+            "department": "CSC",
+            "id": "course-csc443"
+      },
+      {
+            "code": "DSC240",
+            "displayCode": "DSC 240",
+            "title": "Data Visualization",
+            "credits": "4",
+            "department": "DSC",
+            "id": "course-dsc240"
+      },
+      {
+            "code": "DSC442",
+            "displayCode": "DSC 442",
+            "title": "Data Analysis",
+            "credits": "3",
+            "department": "DSC",
+            "id": "course-dsc442"
+      },
+      {
+            "code": "DSC443",
+            "displayCode": "DSC 443",
+            "title": "AI, Machine Learning, and Deep Learning",
+            "credits": "3",
+            "department": "DSC",
+            "id": "course-dsc443"
+      },
+      {
+            "code": "PHY115",
+            "displayCode": "PHY 115",
+            "title": "Introduction to Astronomy",
+            "credits": "3",
+            "department": "PHY",
+            "id": "course-phy115"
+      },
+      {
+            "code": "PHY201",
+            "displayCode": "PHY 201",
+            "title": "Algebra-Based Physics I",
+            "credits": "3",
+            "department": "PHY",
+            "id": "course-phy201"
+      },
+      {
+            "code": "PHY202",
+            "displayCode": "PHY 202",
+            "title": "Algebra-Based Physics II",
+            "credits": "3",
+            "department": "PHY",
+            "id": "course-phy202"
+      },
+      {
+            "code": "PHY221",
+            "displayCode": "PHY 221",
+            "title": "Physics with Calculus I",
+            "credits": "3",
+            "department": "PHY",
+            "id": "course-phy221"
+      },
+      {
+            "code": "PHY222",
+            "displayCode": "PHY 222",
+            "title": "Physics with Calculus II",
+            "credits": "3",
+            "department": "PHY",
+            "id": "course-phy222"
+      }
+];
+
+    const faculty = [
+      "Dr. Matt Barnes",
+      "Dr. Phillip Bressie",
+      "Dr. Pamela Quintana",
+      "Dr. Priyojit Palit",
+      "Dr. Purbi Adhya",
+      "Prof. Andrea Rossilon"
+    ];
+
+    const defaultFacultyColors = {
+      "Dr. Matt Barnes": "#A2C4C9",
+      "Dr. Phillip Bressie": "#B4A7D6",
+      "Dr. Pamela Quintana": "#F4CCCC",
+      "Dr. Priyojit Palit": "#B6D7A8",
+      "Dr. Purbi Adhya": "#FFE599",
+      "Prof. Andrea Rossilon": "#F9CB9C"
+    };
+
+    const rooms = ["BL030", "BL031", "BL103", "BL116", "BL227"];
+
+    const days = [
+      { key: "M", name: "Monday" },
+      { key: "T", name: "Tuesday" },
+      { key: "W", name: "Wednesday" },
+      { key: "R", name: "Thursday" },
+      { key: "F", name: "Friday" }
+    ];
+
+    const timeSlotGroups = [
+      {
+            "group": "MWF morning slots",
+            "slots": [
+                  {
+                        "pattern": "MWF",
+                        "timeLabel": "8:15-9:05 AM",
+                        "days": [
+                              "Monday",
+                              "Wednesday",
+                              "Friday"
+                        ],
+                        "start": "08:15",
+                        "end": "09:05",
+                        "label": "MWF 8:15-9:05 AM",
+                        "group": "MWF morning slots",
+                        "id": "MWF081509050"
+                  },
+                  {
+                        "pattern": "MWF",
+                        "timeLabel": "9:15-10:05 AM",
+                        "days": [
+                              "Monday",
+                              "Wednesday",
+                              "Friday"
+                        ],
+                        "start": "09:15",
+                        "end": "10:05",
+                        "label": "MWF 9:15-10:05 AM",
+                        "group": "MWF morning slots",
+                        "id": "MWF091510051"
+                  },
+                  {
+                        "pattern": "MWF",
+                        "timeLabel": "10:15-11:05 AM",
+                        "days": [
+                              "Monday",
+                              "Wednesday",
+                              "Friday"
+                        ],
+                        "start": "10:15",
+                        "end": "11:05",
+                        "label": "MWF 10:15-11:05 AM",
+                        "group": "MWF morning slots",
+                        "id": "MWF101511052"
+                  },
+                  {
+                        "pattern": "MWF",
+                        "timeLabel": "11:15 AM-12:05 PM",
+                        "days": [
+                              "Monday",
+                              "Wednesday",
+                              "Friday"
+                        ],
+                        "start": "11:15",
+                        "end": "12:05",
+                        "label": "MWF 11:15 AM-12:05 PM",
+                        "group": "MWF morning slots",
+                        "id": "MWF111512053"
+                  }
+            ]
+      },
+      {
+            "group": "MTRF morning slots",
+            "slots": [
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "8:15-9:05 AM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "08:15",
+                        "end": "09:05",
+                        "label": "MTRF 8:15-9:05 AM",
+                        "group": "MTRF morning slots",
+                        "id": "MTRF081509050"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "9:15-10:05 AM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "09:15",
+                        "end": "10:05",
+                        "label": "MTRF 9:15-10:05 AM",
+                        "group": "MTRF morning slots",
+                        "id": "MTRF091510051"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "10:15-11:05 AM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "10:15",
+                        "end": "11:05",
+                        "label": "MTRF 10:15-11:05 AM",
+                        "group": "MTRF morning slots",
+                        "id": "MTRF101511052"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "11:15 AM-12:05 PM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "11:15",
+                        "end": "12:05",
+                        "label": "MTRF 11:15 AM-12:05 PM",
+                        "group": "MTRF morning slots",
+                        "id": "MTRF111512053"
+                  }
+            ]
+      },
+      {
+            "group": "TR morning slots",
+            "slots": [
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "8:00-9:15 AM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "08:00",
+                        "end": "09:15",
+                        "label": "TR 8:00-9:15 AM",
+                        "group": "TR morning slots",
+                        "id": "TR080009150"
+                  },
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "9:25-10:40 AM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "09:25",
+                        "end": "10:40",
+                        "label": "TR 9:25-10:40 AM",
+                        "group": "TR morning slots",
+                        "id": "TR092510401"
+                  },
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "10:50 AM-12:05 PM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "10:50",
+                        "end": "12:05",
+                        "label": "TR 10:50 AM-12:05 PM",
+                        "group": "TR morning slots",
+                        "id": "TR105012052"
+                  }
+            ]
+      },
+      {
+            "group": "Midday / common-hour slots",
+            "slots": [
+                  {
+                        "pattern": "MW",
+                        "timeLabel": "12:15-1:30 PM",
+                        "days": [
+                              "Monday",
+                              "Wednesday"
+                        ],
+                        "start": "12:15",
+                        "end": "13:30",
+                        "label": "MW 12:15-1:30 PM",
+                        "group": "Midday / common-hour slots",
+                        "id": "MW121513300"
+                  },
+                  {
+                        "pattern": "WF",
+                        "timeLabel": "12:15-1:30 PM",
+                        "days": [
+                              "Wednesday",
+                              "Friday"
+                        ],
+                        "start": "12:15",
+                        "end": "13:30",
+                        "label": "WF 12:15-1:30 PM",
+                        "group": "Midday / common-hour slots",
+                        "id": "WF121513301"
+                  },
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "12:15-1:30 PM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "12:15",
+                        "end": "13:30",
+                        "label": "TR 12:15-1:30 PM",
+                        "group": "Midday / common-hour slots",
+                        "id": "TR121513302"
+                  }
+            ]
+      },
+      {
+            "group": "MW afternoon slots",
+            "slots": [
+                  {
+                        "pattern": "MW",
+                        "timeLabel": "1:45-3:00 PM",
+                        "days": [
+                              "Monday",
+                              "Wednesday"
+                        ],
+                        "start": "13:45",
+                        "end": "15:00",
+                        "label": "MW 1:45-3:00 PM",
+                        "group": "MW afternoon slots",
+                        "id": "MW134515000"
+                  },
+                  {
+                        "pattern": "MW",
+                        "timeLabel": "3:10-4:25 PM",
+                        "days": [
+                              "Monday",
+                              "Wednesday"
+                        ],
+                        "start": "15:10",
+                        "end": "16:25",
+                        "label": "MW 3:10-4:25 PM",
+                        "group": "MW afternoon slots",
+                        "id": "MW151016251"
+                  },
+                  {
+                        "pattern": "MW",
+                        "timeLabel": "4:30-5:45 PM",
+                        "days": [
+                              "Monday",
+                              "Wednesday"
+                        ],
+                        "start": "16:30",
+                        "end": "17:45",
+                        "label": "MW 4:30-5:45 PM",
+                        "group": "MW afternoon slots",
+                        "id": "MW163017452"
+                  }
+            ]
+      },
+      {
+            "group": "TR afternoon slots",
+            "slots": [
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "1:45-3:00 PM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "13:45",
+                        "end": "15:00",
+                        "label": "TR 1:45-3:00 PM",
+                        "group": "TR afternoon slots",
+                        "id": "TR134515000"
+                  },
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "3:10-4:25 PM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "15:10",
+                        "end": "16:25",
+                        "label": "TR 3:10-4:25 PM",
+                        "group": "TR afternoon slots",
+                        "id": "TR151016251"
+                  },
+                  {
+                        "pattern": "TR",
+                        "timeLabel": "4:30-5:45 PM",
+                        "days": [
+                              "Tuesday",
+                              "Thursday"
+                        ],
+                        "start": "16:30",
+                        "end": "17:45",
+                        "label": "TR 4:30-5:45 PM",
+                        "group": "TR afternoon slots",
+                        "id": "TR163017452"
+                  }
+            ]
+      },
+      {
+            "group": "Lab slots - choose any day",
+            "slots": [
+                  {
+                        "pattern": "M Lab",
+                        "timeLabel": "1:45-4:45 PM",
+                        "days": [
+                              "Monday"
+                        ],
+                        "start": "13:45",
+                        "end": "16:45",
+                        "label": "M Lab 1:45-4:45 PM",
+                        "group": "Lab slots - choose any day",
+                        "id": "MLab134516450"
+                  },
+                  {
+                        "pattern": "T Lab",
+                        "timeLabel": "1:45-4:45 PM",
+                        "days": [
+                              "Tuesday"
+                        ],
+                        "start": "13:45",
+                        "end": "16:45",
+                        "label": "T Lab 1:45-4:45 PM",
+                        "group": "Lab slots - choose any day",
+                        "id": "TLab134516451"
+                  },
+                  {
+                        "pattern": "W Lab",
+                        "timeLabel": "1:45-4:45 PM",
+                        "days": [
+                              "Wednesday"
+                        ],
+                        "start": "13:45",
+                        "end": "16:45",
+                        "label": "W Lab 1:45-4:45 PM",
+                        "group": "Lab slots - choose any day",
+                        "id": "WLab134516452"
+                  },
+                  {
+                        "pattern": "R Lab",
+                        "timeLabel": "1:45-4:45 PM",
+                        "days": [
+                              "Thursday"
+                        ],
+                        "start": "13:45",
+                        "end": "16:45",
+                        "label": "R Lab 1:45-4:45 PM",
+                        "group": "Lab slots - choose any day",
+                        "id": "RLab134516453"
+                  },
+                  {
+                        "pattern": "F Lab",
+                        "timeLabel": "1:45-4:45 PM",
+                        "days": [
+                              "Friday"
+                        ],
+                        "start": "13:45",
+                        "end": "16:45",
+                        "label": "F Lab 1:45-4:45 PM",
+                        "group": "Lab slots - choose any day",
+                        "id": "FLab134516454"
+                  }
+            ]
+      }
+];
+    const pastelPalette = [
+      {
+            "name": "Sky",
+            "hex": "#A2C4C9"
+      },
+      {
+            "name": "Blue",
+            "hex": "#9FC5E8"
+      },
+      {
+            "name": "Soft Blue",
+            "hex": "#C9DAF8"
+      },
+      {
+            "name": "Lavender",
+            "hex": "#B4A7D6"
+      },
+      {
+            "name": "Lilac",
+            "hex": "#D9D2E9"
+      },
+      {
+            "name": "Rose",
+            "hex": "#F4CCCC"
+      },
+      {
+            "name": "Pink",
+            "hex": "#D5A6BD"
+      },
+      {
+            "name": "Peach",
+            "hex": "#F9CB9C"
+      },
+      {
+            "name": "Yellow",
+            "hex": "#FFE599"
+      },
+      {
+            "name": "Sage",
+            "hex": "#B6D7A8"
+      },
+      {
+            "name": "Mint",
+            "hex": "#D9EAD3"
+      },
+      {
+            "name": "Teal",
+            "hex": "#B7D7D8"
+      }
+];
+    const timeSlots = timeSlotGroups.flatMap(group => group.slots);
+
+    const scheduleStart = "07:45";
+    const scheduleEnd = "17:45";
+    const pixelsPerMinute = 1.05;
+
+    let offeredCodes = JSON.parse(localStorage.getItem("shcDepartmentOfferedCodesV7")) || [];
+    let scheduled = JSON.parse(localStorage.getItem("shcDepartmentScheduledV7")) || [];
+    let editingId = null;
+
+    const courseSearch = document.getElementById("courseSearch");
+    const coursePicker = document.getElementById("coursePicker");
+    const courseStatus = document.getElementById("courseStatus");
+    const offeredList = document.getElementById("offeredList");
+    const scheduledList = document.getElementById("scheduledList");
+    const addForm = document.getElementById("addForm");
+    const courseSelect = document.getElementById("courseSelect");
+    const sectionInput = document.getElementById("sectionInput");
+    const facultySelect = document.getElementById("facultySelect");
+    const slotSelect = document.getElementById("slotSelect");
+    const roomSelect = document.getElementById("roomSelect");
+    const facultyColorControls = document.getElementById("facultyColorControls");
+    let facultyColors = JSON.parse(localStorage.getItem("shcDepartmentFacultyColorsV7")) || { ...defaultFacultyColors };
+    const submitScheduleBtn = document.getElementById("submitScheduleBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const scheduleStatus = document.getElementById("scheduleStatus");
+    const scheduleTable = document.getElementById("scheduleTable");
+
+    function saveAll() {
+      localStorage.setItem("shcDepartmentOfferedCodesV7", JSON.stringify(offeredCodes));
+      localStorage.setItem("shcDepartmentScheduledV7", JSON.stringify(scheduled));
+      localStorage.setItem("shcDepartmentFacultyColorsV7", JSON.stringify(facultyColors));
+    }
+
+    function byCatalogOrder(codes) {
+      const set = new Set(codes);
+      return courseCatalog.filter(course => set.has(course.code)).map(course => course.code);
+    }
+
+    function getCourse(code) {
+      return courseCatalog.find(course => course.code === code);
+    }
+
+    function getOfferedCourses() {
+      const set = new Set(offeredCodes);
+      return courseCatalog.filter(course => set.has(course.code));
+    }
+
+    function facultyColor(name) {
+      return facultyColors[name] || defaultFacultyColors[name] || "#A2C4C9";
+    }
+
+    function setFacultyColor(name, hex) {
+      facultyColors[name] = hex;
+      saveAll();
+      renderScheduleTable();
+      renderScheduledList();
+      renderFacultyColorControls();
+    }
+
+    function resetFacultyColors() {
+      facultyColors = { ...defaultFacultyColors };
+      saveAll();
+      renderAll();
+    }
+
+    function renderFacultyColorControls() {
+      facultyColorControls.innerHTML = faculty.map(name => `
+        <label class="faculty-color-item">
+          <input type="color" value="${escapeHtml(facultyColor(name))}" onchange="setFacultyColor('${escapeHtml(name)}', this.value)" />
+          <span>
+            <span class="name">${escapeHtml(shorten(name, 24))}</span>
+            <span class="last">Grid label: ${escapeHtml(lastName(name))}</span>
+          </span>
+        </label>
+      `).join("");
+    }
+
+    function renderCoursePicker() {
+      const filter = courseSearch.value.trim().toLowerCase();
+      const filtered = courseCatalog.filter(course => {
+        const haystack = `${course.code} ${course.displayCode} ${course.title} ${course.department}`.toLowerCase();
+        return !filter || haystack.includes(filter);
+      });
+
+      if (!filtered.length) {
+        coursePicker.innerHTML = `<p class="empty">No matching courses.</p>`;
+        return;
+      }
+
+      const grouped = {};
+      filtered.forEach(course => {
+        if (!grouped[course.department]) grouped[course.department] = [];
+        grouped[course.department].push(course);
+      });
+
+      coursePicker.innerHTML = Object.keys(grouped).map(dept => {
+        const checks = grouped[dept].map(course => `
+          <label class="course-check">
+            <input type="checkbox" value="${escapeHtml(course.code)}" ${offeredCodes.includes(course.code) ? "checked" : ""} onchange="toggleCourse('${escapeHtml(course.code)}', this.checked)" />
+            <span>
+              <span class="code">${escapeHtml(course.displayCode)}</span>
+              <span class="title">${escapeHtml(course.title)} · ${escapeHtml(course.credits)} cr</span>
+            </span>
+          </label>
+        `).join("");
+        return `<div class="course-group"><div class="course-group-title">${escapeHtml(dept)}</div><div class="course-options">${checks}</div></div>`;
+      }).join("");
+    }
+
+    function toggleCourse(code, checked) {
+      if (checked) {
+        offeredCodes = byCatalogOrder([...new Set([...offeredCodes, code])]);
+      } else {
+        const scheduledCount = scheduled.filter(item => item.courseCode === code).length;
+        if (scheduledCount) {
+          const ok = confirm(`${formatCourseCode(code)} has ${scheduledCount} scheduled section(s). Removing it will also delete those scheduled sections. Continue?`);
+          if (!ok) { renderCoursePicker(); return; }
+        }
+        offeredCodes = offeredCodes.filter(c => c !== code);
+        scheduled = scheduled.filter(item => item.courseCode !== code);
+      }
+      saveAll();
+      renderAll();
+    }
+
+    function selectAllCourses() {
+      offeredCodes = courseCatalog.map(course => course.code);
+      saveAll();
+      renderAll();
+    }
+
+    function selectDepartment(dept) {
+      const merged = new Set(offeredCodes);
+      courseCatalog.filter(course => course.department === dept).forEach(course => merged.add(course.code));
+      offeredCodes = byCatalogOrder([...merged]);
+      saveAll();
+      renderAll();
+    }
+
+    function clearCourses() {
+      if (!confirm("Clear the offered course list and the schedule?")) return;
+      offeredCodes = [];
+      scheduled = [];
+      saveAll();
+      renderAll();
+    }
+
+    function populateCourseSelect() {
+      const offered = getOfferedCourses();
+      if (!offered.length) {
+        courseSelect.innerHTML = `<option value="">Choose courses on the left first</option>`;
+        courseSelect.disabled = true;
+        return;
+      }
+      courseSelect.disabled = false;
+      courseSelect.innerHTML = offered.map(course => {
+        const count = scheduled.filter(item => item.courseCode === course.code).length;
+        const suffix = count ? ` (${count} scheduled)` : "";
+        return `<option value="${escapeHtml(course.code)}">${escapeHtml(course.displayCode)} - ${escapeHtml(course.title)}${suffix}</option>`;
+      }).join("");
+    }
+
+    function populateStaticSelects() {
+      facultySelect.innerHTML = faculty.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+      roomSelect.innerHTML = rooms.map(room => `<option value="${escapeHtml(room)}">${escapeHtml(room)}</option>`).join("");
+      slotSelect.innerHTML = timeSlotGroups.map(group => {
+        const options = group.slots.map(slot => `<option value="${escapeHtml(slot.id)}">${escapeHtml(slot.label)}</option>`).join("");
+        return `<optgroup label="${escapeHtml(group.group)}">${options}</optgroup>`;
+      }).join("");
+    }
+
+    function findSlot(id) { return timeSlots.find(slot => slot.id === id); }
+
+    function makeScheduledItem(course, chosenSlot, existingId = null) {
+      const section = sectionInput.value.trim();
+      const sectionSuffix = section ? `.${section}` : "";
+      return {
+        id: existingId || `scheduled-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        courseCode: course.code,
+        displayCode: course.displayCode,
+        courseTitle: course.title,
+        credits: course.credits,
+        section,
+        courseLabel: `${course.displayCode}${sectionSuffix}`,
+        shortLabel: `${course.code}${sectionSuffix}`,
+        faculty: facultySelect.value,
+        room: roomSelect.value,
+        slotId: chosenSlot.id,
+        slotLabel: chosenSlot.label,
+        pattern: chosenSlot.pattern,
+        days: chosenSlot.days,
+        start: chosenSlot.start,
+        end: chosenSlot.end
+      };
+    }
+
+    addForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      const course = getCourse(courseSelect.value);
+      const chosenSlot = findSlot(slotSelect.value);
+      if (!course || !chosenSlot) {
+        alert("Please choose a course and time slot.");
+        return;
+      }
+
+      const newItem = makeScheduledItem(course, chosenSlot, editingId);
+
+      if (editingId) {
+        scheduled = scheduled.map(item => item.id === editingId ? newItem : item);
+        editingId = null;
+        updateEditControls();
+      } else {
+        scheduled.push(newItem);
+      }
+
+      saveAll();
+      renderAll();
+    });
+
+    function timeToMinutes(time) {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    }
+
+    function timesOverlap(aStart, aEnd, bStart, bEnd) {
+      return timeToMinutes(aStart) < timeToMinutes(bEnd) && timeToMinutes(aEnd) > timeToMinutes(bStart);
+    }
+
+    function sharedDays(a, b) {
+      return a.days.filter(day => b.days.includes(day));
+    }
+
+    function conflictReasons(item) {
+      const reasons = [];
+      scheduled.forEach(other => {
+        if (other.id === item.id) return;
+        const overlapDays = sharedDays(item, other);
+        if (!overlapDays.length) return;
+        if (!timesOverlap(item.start, item.end, other.start, other.end)) return;
+        const dayText = overlapDays.map(day => day.slice(0, 3)).join("/");
+        if (item.room === other.room) reasons.push(`Room conflict with ${other.courseLabel} on ${dayText}`);
+        if (item.faculty === other.faculty) reasons.push(`Faculty conflict with ${other.courseLabel} on ${dayText}`);
+      });
+      return [...new Set(reasons)];
+    }
+
+    function buildTimeMarks() {
+      const map = new Map();
+      const add = (time, kind) => {
+        if (!map.has(time)) map.set(time, { time, hour: false, slot: false });
+        map.get(time)[kind] = true;
+      };
+
+      timeSlots.forEach(slot => {
+        add(slot.start, "slot");
+        add(slot.end, "slot");
+      });
+
+      const startHour = Math.ceil(timeToMinutes(scheduleStart) / 60);
+      const endHour = Math.floor(timeToMinutes(scheduleEnd) / 60);
+      for (let hour = startHour; hour <= endHour; hour++) {
+        add(`${String(hour).padStart(2, "0")}:00`, "hour");
+      }
+      return [...map.values()].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+    }
+
+    function timeTop(time) { return (timeToMinutes(time) - timeToMinutes(scheduleStart)) * pixelsPerMinute; }
+
+    function renderScheduleTable() {
+      const totalColumns = days.length * rooms.length;
+      const bodyHeight = (timeToMinutes(scheduleEnd) - timeToMinutes(scheduleStart)) * pixelsPerMinute;
+      const marks = buildTimeMarks();
+
+      let html = `
+        <div class="schedule-header" style="grid-template-columns: var(--time-width) repeat(${totalColumns}, var(--room-width));">
+          <div class="header-cell time-head-linear" style="grid-column:1; grid-row:1 / span 2;">Time</div>
+      `;
+
+      days.forEach((day, dayIndex) => {
+        const startColumn = 2 + dayIndex * rooms.length;
+        html += `<div class="header-cell day-head ${dayIndex === 0 ? "day-sep" : ""}" style="grid-column:${startColumn} / span ${rooms.length}; grid-row:1;">${escapeHtml(day.key)}</div>`;
+      });
+
+      days.forEach((day, dayIndex) => {
+        rooms.forEach((room, roomIndex) => {
+          const column = 2 + dayIndex * rooms.length + roomIndex;
+          html += `<div class="header-cell room-head ${roomIndex === 0 ? "day-sep" : ""}" style="grid-column:${column};">${escapeHtml(room)}</div>`;
+        });
+      });
+
+      html += `</div>`;
+      html += `<div class="schedule-body" style="--body-height:${bodyHeight}px; height:${bodyHeight}px; grid-template-columns: var(--time-width) repeat(${totalColumns}, var(--room-width));">`;
+
+      marks.forEach(mark => {
+        const top = timeTop(mark.time);
+        const className = mark.hour ? "time-rule hour-rule" : "time-rule slot-rule";
+        html += `<div class="${className}" style="top:${top}px;"></div>`;
+      });
+
+      html += `<div class="time-axis" style="grid-column:1;">`;
+      let lastLabelTop = -1000;
+      marks.forEach(mark => {
+        const top = timeTop(mark.time);
+        const nearBottom = top > bodyHeight - 10;
+        const shouldLabel = !nearBottom && (mark.hour || top - lastLabelTop >= 36);
+        if (shouldLabel) {
+          const className = mark.hour ? "time-label hour-label" : "time-label";
+          html += `<div class="${className}" style="top:${top}px;">${formatClock(mark.time)}</div>`;
+          lastLabelTop = top;
+        }
+      });
+      html += `</div>`;
+
+      days.forEach((day, dayIndex) => {
+        rooms.forEach((room, roomIndex) => {
+          const column = 2 + dayIndex * rooms.length + roomIndex;
+          html += `<div class="room-column ${roomIndex === 0 ? "day-sep" : ""}" style="grid-column:${column};" data-day="${escapeHtml(day.name)}" data-room="${escapeHtml(room)}"></div>`;
+        });
+      });
+
+      html += `</div>`;
+      scheduleTable.innerHTML = html;
+
+      scheduled.forEach(item => {
+        item.days.forEach(day => {
+          const column = scheduleTable.querySelector(`.room-column[data-day="${cssEscape(day)}"][data-room="${cssEscape(item.room)}"]`);
+          if (!column) return;
+          const top = timeTop(item.start);
+          const height = Math.max(32, (timeToMinutes(item.end) - timeToMinutes(item.start)) * pixelsPerMinute);
+          const reasons = conflictReasons(item);
+          const event = document.createElement("div");
+          event.className = `${reasons.length ? "event conflict" : "event"}${height < 54 ? " compact" : ""}`;
+          event.style.background = facultyColor(item.faculty);
+          event.style.top = `${top}px`;
+          event.style.height = `${height}px`;
+          event.title = reasons.length ? reasons.join("\n") : `${item.courseLabel}\n${item.courseTitle}\n${item.faculty}\n${item.slotLabel}\n${item.room}\nClick to edit`;
+          event.innerHTML = `
+            <strong>${escapeHtml(item.courseCode)}</strong>
+            <span class="faculty">${escapeHtml(lastName(item.faculty))}</span>
+            ${reasons.length ? `<div class="conflict-note">!</div>` : ""}
+          `;
+          event.addEventListener("click", () => editScheduled(item.id));
+          column.appendChild(event);
+        });
+      });
+    }
+
+    function renderOfferedList() {
+      const offered = getOfferedCourses();
+      if (!offered.length) {
+        offeredList.innerHTML = `<p class="empty">No offered courses selected.</p>`;
+        return;
+      }
+      offeredList.innerHTML = offered.map(course => {
+        const count = scheduled.filter(item => item.courseCode === course.code).length;
+        return `<div class="pill"><strong>${escapeHtml(course.displayCode)}</strong><div class="subtext">${escapeHtml(course.title)} · ${count ? count + " scheduled" : "not scheduled"}</div></div>`;
+      }).join("");
+    }
+
+    function renderScheduledList() {
+      if (!scheduled.length) {
+        scheduledList.innerHTML = `<p class="empty">No scheduled sections yet.</p>`;
+        return;
+      }
+      scheduledList.innerHTML = scheduled.map(item => {
+        const reasons = conflictReasons(item);
+        return `
+          <div class="scheduled-item ${reasons.length ? "conflict-card" : ""}" style="border-left-color:${escapeHtml(facultyColor(item.faculty))}">
+            <div>
+              <strong>${escapeHtml(item.courseLabel)}</strong>
+              <div class="subtext">${escapeHtml(lastName(item.faculty))} · ${escapeHtml(item.room)}<br>${escapeHtml(item.slotLabel)}</div>
+              ${reasons.length ? `<div class="conflict-note">${escapeHtml(reasons.join("; "))}</div>` : ""}
+            </div>
+            <div class="item-actions">
+              <button type="button" class="secondary small" onclick="editScheduled('${escapeHtml(item.id)}')">Edit</button>
+              <button type="button" class="danger small" onclick="deleteScheduled('${escapeHtml(item.id)}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderStatus() {
+      const selectedCount = offeredCodes.length;
+      courseStatus.textContent = selectedCount ? `${selectedCount} offered course(s) selected.` : "No courses selected yet.";
+      courseStatus.className = selectedCount ? "status ok" : "status";
+
+      const conflicts = scheduled.filter(item => conflictReasons(item).length).length;
+      if (!scheduled.length) {
+        scheduleStatus.textContent = "No scheduled courses yet.";
+        scheduleStatus.className = "status";
+      } else if (conflicts) {
+        scheduleStatus.textContent = `${scheduled.length} scheduled section(s). ${conflicts} section(s) have room or faculty conflicts.`;
+        scheduleStatus.className = "status danger";
+      } else {
+        scheduleStatus.textContent = `${scheduled.length} scheduled section(s). No room/faculty conflicts detected.`;
+        scheduleStatus.className = "status ok";
+      }
+    }
+
+    function renderAll() {
+      renderCoursePicker();
+      populateCourseSelect();
+      renderFacultyColorControls();
+      renderScheduleTable();
+      renderOfferedList();
+      renderScheduledList();
+      renderStatus();
+      updateEditControls();
+    }
+
+    function updateEditControls() {
+      if (editingId) {
+        submitScheduleBtn.textContent = "Save Changes";
+        submitScheduleBtn.classList.add("success");
+        cancelEditBtn.style.display = "inline-block";
+      } else {
+        submitScheduleBtn.textContent = "Add Section";
+        submitScheduleBtn.classList.remove("success");
+        cancelEditBtn.style.display = "none";
+      }
+    }
+
+    function editScheduled(id) {
+      const item = scheduled.find(entry => entry.id === id);
+      if (!item) return;
+      if (!offeredCodes.includes(item.courseCode)) {
+        offeredCodes.push(item.courseCode);
+        offeredCodes = byCatalogOrder(offeredCodes);
+        populateCourseSelect();
+      }
+      editingId = id;
+      courseSelect.value = item.courseCode;
+      sectionInput.value = item.section || "";
+      facultySelect.value = item.faculty;
+      slotSelect.value = item.slotId;
+      roomSelect.value = item.room;
+      updateEditControls();
+      document.getElementById("addForm").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      updateEditControls();
+      addForm.reset();
+      sectionInput.value = "01";
+    }
+
+    function deleteScheduled(id) {
+      if (editingId === id) editingId = null;
+      scheduled = scheduled.filter(item => item.id !== id);
+      saveAll();
+      renderAll();
+    }
+
+    function clearSchedule() {
+      if (!confirm("Clear only the schedule? The offered course list will stay.")) return;
+      scheduled = [];
+      saveAll();
+      renderAll();
+    }
+
+    function exportScheduleCsv() {
+      if (!scheduled.length) { alert("No scheduled courses to export."); return; }
+      const rows = [["course", "section", "title", "credits", "faculty", "room", "pattern", "time", "days", "faculty_color"]];
+      scheduled.forEach(item => rows.push([
+        item.displayCode,
+        item.section,
+        item.courseTitle,
+        item.credits,
+        item.faculty,
+        item.room,
+        item.pattern,
+        `${formatClock(item.start)}-${formatClock(item.end)}`,
+        item.days.join("/"),
+        facultyColor(item.faculty)
+      ]));
+      const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+      downloadTextFile(csv, "spring-hill-department-schedule.csv", "text/csv");
+    }
+
+    function downloadTextFile(text, filename, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function formatCourseCode(code) {
+      const course = getCourse(code);
+      return course ? course.displayCode : code;
+    }
+
+    function formatClock(time) {
+      const [hour, minute] = time.split(":").map(Number);
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+    }
+
+    function lastName(fullName) {
+      const parts = fullName.replace("Prof.", "").replace("Dr.", "").trim().split(/\s+/);
+      return parts[parts.length - 1] || fullName;
+    }
+
+    function shorten(text, max) {
+      const clean = String(text || "").trim();
+      return clean.length > max ? clean.slice(0, max - 1) + "…" : clean;
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+      return text;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function cssEscape(value) {
+      if (window.CSS && CSS.escape) return CSS.escape(value);
+      return String(value).replace(/"/g, '\"');
+    }
+
+    courseSearch.addEventListener("input", renderCoursePicker);
+    populateStaticSelects();
+    renderAll();
+  </script>
+</body>
+</html>
