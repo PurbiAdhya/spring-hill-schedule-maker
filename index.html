@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spring Hill Department Schedule Maker - Faculty Colors</title>
+  <title>SHC Schedule Maker</title>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -156,6 +156,7 @@
     button.danger { background: var(--danger); }
     button.success { background: var(--ok); }
     button.small { padding: 6px 8px; font-size: 12px; border-radius: 8px; }
+    button.filter-active { background: var(--primary); color: white; border-color: var(--primary); }
     .item-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     button:hover { opacity: 0.93; }
 
@@ -484,6 +485,70 @@
     .event .course-title, .event .slot-line { display: none; }
     .event { cursor: pointer; }
 
+
+    .blocked-event {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      border-radius: 6px;
+      padding: 4px 5px;
+      background: repeating-linear-gradient(
+        135deg,
+        #f1f5f9,
+        #f1f5f9 7px,
+        #e2e8f0 7px,
+        #e2e8f0 14px
+      );
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      font-weight: 800;
+      font-size: 11px;
+      line-height: 1.12;
+      overflow: hidden;
+      text-align: center;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .faculty-load-panel {
+      margin-top: 14px;
+    }
+
+    .faculty-load-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .faculty-load-table th,
+    .faculty-load-table td {
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .faculty-load-table th {
+      color: var(--primary);
+      background: #f8fafc;
+      font-size: 14px;
+    }
+
+    .faculty-load-table .load-total {
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .faculty-swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.18);
+      margin-right: 7px;
+      vertical-align: -1px;
+    }
+
     .event.compact .course-title { display: none; }
 
     .event.conflict {
@@ -577,7 +642,7 @@
 </head>
 <body>
   <header>
-    <h1>Spring Hill Department Schedule Maker</h1>
+    <h1>SHC Schedule Maker</h1>
     <p>Select offered courses, assign sections, and view a compact room schedule with faculty-based colors.</p>
   </header>
 
@@ -587,17 +652,17 @@
         <h2>Courses Offered</h2>
         <div class="course-search-row">
           <div>
-            <label for="courseSearch">Search courses</label>
+            <label for="courseSearch">Search visible courses</label>
             <input id="courseSearch" type="text" placeholder="Search MTH 121, data, physics..." />
           </div>
         </div>
-        <div class="buttons">
-          <button type="button" class="secondary" onclick="selectAllCourses()">Select All</button>
-          <button type="button" class="secondary" onclick="selectDepartment('MTH')">MTH</button>
-          <button type="button" class="secondary" onclick="selectDepartment('CSC')">CSC</button>
-          <button type="button" class="secondary" onclick="selectDepartment('DSC')">DSC</button>
-          <button type="button" class="secondary" onclick="selectDepartment('PHY')">PHY</button>
-          <button type="button" class="danger" onclick="clearCourses()">Clear</button>
+        <div class="buttons" id="departmentFilters">
+          <button type="button" class="secondary filter-active" data-filter="ALL" onclick="setDepartmentFilter('ALL')">All</button>
+          <button type="button" class="secondary" data-filter="MTH" onclick="setDepartmentFilter('MTH')">MTH</button>
+          <button type="button" class="secondary" data-filter="CSC" onclick="setDepartmentFilter('CSC')">CSC</button>
+          <button type="button" class="secondary" data-filter="DSC" onclick="setDepartmentFilter('DSC')">DSC</button>
+          <button type="button" class="secondary" data-filter="PHY" onclick="setDepartmentFilter('PHY')">PHY</button>
+          <button type="button" class="danger" onclick="clearCourses()">Clear Selected</button>
         </div>
         <p id="courseStatus" class="status">No courses selected yet.</p>
         <div id="coursePicker" class="course-picker" style="margin-top:12px;"></div>
@@ -661,12 +726,18 @@
           <div class="metric"><strong>View:</strong> code + faculty last name; colors = faculty</div>
           <div class="metric"><strong>Rooms:</strong> BL030, BL031, BL103, BL116, BL227</div>
           <div class="metric"><strong>Labs:</strong> 1:45-4:45 PM on any day</div>
+          <div class="metric"><strong>Common Hour:</strong> TR 12:15-1:30 PM blocked</div>
         </div>
       </section>
 
       <div class="table-wrap">
         <div class="linear-schedule" id="scheduleTable"></div>
       </div>
+
+      <section class="panel faculty-load-panel">
+        <h2>Faculty Load Summary</h2>
+        <div id="facultyLoadSummary"></div>
+      </section>
     </main>
   </div>
 
@@ -969,6 +1040,22 @@
             "id": "course-phy202"
       },
       {
+            "code": "PHY213",
+            "displayCode": "PHY 213",
+            "title": "Physics Laboratory I",
+            "credits": "1",
+            "department": "PHY",
+            "id": "course-phy213"
+      },
+      {
+            "code": "PHY214",
+            "displayCode": "PHY 214",
+            "title": "Physics Laboratory II",
+            "credits": "1",
+            "department": "PHY",
+            "id": "course-phy214"
+      },
+      {
             "code": "PHY221",
             "displayCode": "PHY 221",
             "title": "Physics with Calculus I",
@@ -1012,6 +1099,15 @@
       { key: "W", name: "Wednesday" },
       { key: "R", name: "Thursday" },
       { key: "F", name: "Friday" }
+    ];
+
+    const commonHourBlocks = [
+      {
+        label: "Common Hour",
+        days: ["Tuesday", "Thursday"],
+        start: "12:15",
+        end: "13:30"
+      }
     ];
 
     const timeSlotGroups = [
@@ -1142,6 +1238,71 @@
             ]
       },
       {
+            "group": "MTRF afternoon slots",
+            "slots": [
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "1:45-2:35 PM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "13:45",
+                        "end": "14:35",
+                        "label": "MTRF 1:45-2:35 PM",
+                        "group": "MTRF afternoon slots",
+                        "id": "MTRF13451435"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "2:45-3:35 PM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "14:45",
+                        "end": "15:35",
+                        "label": "MTRF 2:45-3:35 PM",
+                        "group": "MTRF afternoon slots",
+                        "id": "MTRF14451535"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "3:45-4:35 PM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "15:45",
+                        "end": "16:35",
+                        "label": "MTRF 3:45-4:35 PM",
+                        "group": "MTRF afternoon slots",
+                        "id": "MTRF15451635"
+                  },
+                  {
+                        "pattern": "MTRF",
+                        "timeLabel": "4:45-5:35 PM",
+                        "days": [
+                              "Monday",
+                              "Tuesday",
+                              "Thursday",
+                              "Friday"
+                        ],
+                        "start": "16:45",
+                        "end": "17:35",
+                        "label": "MTRF 4:45-5:35 PM",
+                        "group": "MTRF afternoon slots",
+                        "id": "MTRF16451735"
+                  }
+            ]
+      },
+      {
             "group": "TR morning slots",
             "slots": [
                   {
@@ -1189,6 +1350,30 @@
             "group": "Midday / common-hour slots",
             "slots": [
                   {
+                        "pattern": "M",
+                        "timeLabel": "12:15-1:30 PM",
+                        "days": [
+                              "Monday"
+                        ],
+                        "start": "12:15",
+                        "end": "13:30",
+                        "label": "M 12:15-1:30 PM",
+                        "group": "Midday / common-hour slots",
+                        "id": "M12151330"
+                  },
+                  {
+                        "pattern": "W",
+                        "timeLabel": "12:15-1:30 PM",
+                        "days": [
+                              "Wednesday"
+                        ],
+                        "start": "12:15",
+                        "end": "13:30",
+                        "label": "W 12:15-1:30 PM",
+                        "group": "Midday / common-hour slots",
+                        "id": "W12151330"
+                  },
+                  {
                         "pattern": "MW",
                         "timeLabel": "12:15-1:30 PM",
                         "days": [
@@ -1213,19 +1398,6 @@
                         "label": "WF 12:15-1:30 PM",
                         "group": "Midday / common-hour slots",
                         "id": "WF121513301"
-                  },
-                  {
-                        "pattern": "TR",
-                        "timeLabel": "12:15-1:30 PM",
-                        "days": [
-                              "Tuesday",
-                              "Thursday"
-                        ],
-                        "start": "12:15",
-                        "end": "13:30",
-                        "label": "TR 12:15-1:30 PM",
-                        "group": "Midday / common-hour slots",
-                        "id": "TR121513302"
                   }
             ]
       },
@@ -1442,10 +1614,12 @@
     let offeredCodes = JSON.parse(localStorage.getItem("shcDepartmentOfferedCodesV7")) || [];
     let scheduled = JSON.parse(localStorage.getItem("shcDepartmentScheduledV7")) || [];
     let editingId = null;
+    let activeDepartmentFilter = "ALL";
 
     const courseSearch = document.getElementById("courseSearch");
     const coursePicker = document.getElementById("coursePicker");
     const courseStatus = document.getElementById("courseStatus");
+    const departmentFilters = document.getElementById("departmentFilters");
     const offeredList = document.getElementById("offeredList");
     const scheduledList = document.getElementById("scheduledList");
     const addForm = document.getElementById("addForm");
@@ -1460,6 +1634,7 @@
     const cancelEditBtn = document.getElementById("cancelEditBtn");
     const scheduleStatus = document.getElementById("scheduleStatus");
     const scheduleTable = document.getElementById("scheduleTable");
+    const facultyLoadSummary = document.getElementById("facultyLoadSummary");
 
     function saveAll() {
       localStorage.setItem("shcDepartmentOfferedCodesV7", JSON.stringify(offeredCodes));
@@ -1491,6 +1666,7 @@
       renderScheduleTable();
       renderScheduledList();
       renderFacultyColorControls();
+      renderFacultyLoadSummary();
     }
 
     function resetFacultyColors() {
@@ -1515,8 +1691,11 @@
       const filter = courseSearch.value.trim().toLowerCase();
       const filtered = courseCatalog.filter(course => {
         const haystack = `${course.code} ${course.displayCode} ${course.title} ${course.department}`.toLowerCase();
-        return !filter || haystack.includes(filter);
+        const matchesSearch = !filter || haystack.includes(filter);
+        const matchesDepartment = activeDepartmentFilter === "ALL" || course.department === activeDepartmentFilter;
+        return matchesSearch && matchesDepartment;
       });
+      updateDepartmentFilterButtons();
 
       if (!filtered.length) {
         coursePicker.innerHTML = `<p class="empty">No matching courses.</p>`;
@@ -1559,18 +1738,17 @@
       renderAll();
     }
 
-    function selectAllCourses() {
-      offeredCodes = courseCatalog.map(course => course.code);
-      saveAll();
-      renderAll();
+    function setDepartmentFilter(dept) {
+      activeDepartmentFilter = dept;
+      renderCoursePicker();
     }
 
-    function selectDepartment(dept) {
-      const merged = new Set(offeredCodes);
-      courseCatalog.filter(course => course.department === dept).forEach(course => merged.add(course.code));
-      offeredCodes = byCatalogOrder([...merged]);
-      saveAll();
-      renderAll();
+    function updateDepartmentFilterButtons() {
+      if (!departmentFilters) return;
+      departmentFilters.querySelectorAll("button[data-filter]").forEach(button => {
+        const isActive = button.dataset.filter === activeDepartmentFilter;
+        button.classList.toggle("filter-active", isActive);
+      });
     }
 
     function clearCourses() {
@@ -1677,6 +1855,15 @@
         if (item.room === other.room) reasons.push(`Room conflict with ${other.courseLabel} on ${dayText}`);
         if (item.faculty === other.faculty) reasons.push(`Faculty conflict with ${other.courseLabel} on ${dayText}`);
       });
+
+      commonHourBlocks.forEach(block => {
+        const overlapDays = item.days.filter(day => block.days.includes(day));
+        if (!overlapDays.length) return;
+        if (!timesOverlap(item.start, item.end, block.start, block.end)) return;
+        const dayText = overlapDays.map(day => day.slice(0, 3)).join("/");
+        reasons.push(`${block.label} blocked on ${dayText}`);
+      });
+
       return [...new Set(reasons)];
     }
 
@@ -1690,6 +1877,11 @@
       timeSlots.forEach(slot => {
         add(slot.start, "slot");
         add(slot.end, "slot");
+      });
+
+      commonHourBlocks.forEach(block => {
+        add(block.start, "slot");
+        add(block.end, "slot");
       });
 
       const startHour = Math.ceil(timeToMinutes(scheduleStart) / 60);
@@ -1757,6 +1949,22 @@
       html += `</div>`;
       scheduleTable.innerHTML = html;
 
+      commonHourBlocks.forEach(block => {
+        block.days.forEach(day => {
+          rooms.forEach(room => {
+            const column = scheduleTable.querySelector(`.room-column[data-day="${cssEscape(day)}"][data-room="${cssEscape(room)}"]`);
+            if (!column) return;
+            const blocked = document.createElement("div");
+            blocked.className = "blocked-event";
+            blocked.style.top = `${timeTop(block.start)}px`;
+            blocked.style.height = `${Math.max(30, (timeToMinutes(block.end) - timeToMinutes(block.start)) * pixelsPerMinute)}px`;
+            blocked.textContent = block.label;
+            blocked.title = `${block.label}: ${formatClock(block.start)}-${formatClock(block.end)}`;
+            column.appendChild(blocked);
+          });
+        });
+      });
+
       scheduled.forEach(item => {
         item.days.forEach(day => {
           const column = scheduleTable.querySelector(`.room-column[data-day="${cssEscape(day)}"][data-room="${cssEscape(item.room)}"]`);
@@ -1818,7 +2026,8 @@
 
     function renderStatus() {
       const selectedCount = offeredCodes.length;
-      courseStatus.textContent = selectedCount ? `${selectedCount} offered course(s) selected.` : "No courses selected yet.";
+      const filterText = activeDepartmentFilter === "ALL" ? "all courses shown" : `${activeDepartmentFilter} courses shown`;
+      courseStatus.textContent = selectedCount ? `${selectedCount} offered course(s) selected; ${filterText}.` : `No courses selected yet; ${filterText}.`;
       courseStatus.className = selectedCount ? "status ok" : "status";
 
       const conflicts = scheduled.filter(item => conflictReasons(item).length).length;
@@ -1834,6 +2043,65 @@
       }
     }
 
+
+
+    function parseCredits(value) {
+      if (!value) return 0;
+      const match = String(value).match(/\d+(?:\.\d+)?/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function formatCreditTotal(value) {
+      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+    }
+
+    function renderFacultyLoadSummary() {
+      if (!facultyLoadSummary) return;
+      const rows = faculty.map(name => {
+        const items = scheduled.filter(item => item.faculty === name);
+        const sectionCount = items.length;
+        const creditTotal = items.reduce((sum, item) => sum + parseCredits(item.credits), 0);
+        const courseList = items.length
+          ? items.map(item => `${item.courseLabel} (${item.room}, ${item.slotLabel})`).join("; ")
+          : "—";
+        return { name, sectionCount, creditTotal, courseList };
+      });
+
+      const totalSections = rows.reduce((sum, row) => sum + row.sectionCount, 0);
+      const totalCredits = rows.reduce((sum, row) => sum + row.creditTotal, 0);
+
+      facultyLoadSummary.innerHTML = `
+        <table class="faculty-load-table">
+          <thead>
+            <tr>
+              <th>Faculty</th>
+              <th>Sections</th>
+              <th>Credits</th>
+              <th>Scheduled courses</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td><span class="faculty-swatch" style="background:${escapeHtml(facultyColor(row.name))}"></span>${escapeHtml(row.name)}</td>
+                <td>${row.sectionCount}</td>
+                <td>${formatCreditTotal(row.creditTotal)}</td>
+                <td>${escapeHtml(row.courseList)}</td>
+              </tr>
+            `).join("")}
+            <tr class="load-total">
+              <td>Total</td>
+              <td>${totalSections}</td>
+              <td>${formatCreditTotal(totalCredits)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="help-text">Credits are summed from the catalog credit value stored for each course.</p>
+      `;
+    }
+
+
     function renderAll() {
       renderCoursePicker();
       populateCourseSelect();
@@ -1842,6 +2110,7 @@
       renderOfferedList();
       renderScheduledList();
       renderStatus();
+      renderFacultyLoadSummary();
       updateEditControls();
     }
 
