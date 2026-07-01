@@ -630,9 +630,73 @@
       .form-grid { grid-template-columns: 1fr; }
     }
 
+
+
+    .export-panel { display: none; }
+    .export-panel.active { display: block; }
+
+    .export-toolbar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .export-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: white;
+      max-height: 520px;
+    }
+
+    .export-table {
+      width: 100%;
+      min-width: 1200px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .export-table th,
+    .export-table td {
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      padding: 8px;
+      vertical-align: top;
+    }
+
+    .export-table th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: var(--primary-soft);
+      color: var(--primary);
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .export-table td.readonly {
+      color: var(--ink);
+      background: #fafbfc;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .export-table input,
+    .export-table select {
+      font-size: 13px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      min-width: 82px;
+    }
+
+    .export-table .notes-input { min-width: 260px; }
+    .export-table .small-input { min-width: 64px; max-width: 90px; }
+
     @media print {
       body { background: white; }
-      header, .sidebar, .controls, .buttons, .note, .status, .summary-row { display: none !important; }
+      header, .sidebar, .controls, .buttons, .note, .status, .summary-row, .export-panel { display: none !important; }
       .app-shell { display: block; padding: 0; max-width: none; }
       .table-wrap { box-shadow: none; border: none; max-height: none; overflow: visible; }
       .linear-schedule { transform: scale(0.72); transform-origin: top left; }
@@ -717,7 +781,8 @@
         <div class="buttons">
           <button id="submitScheduleBtn" type="submit" form="addForm">Add Section</button>
           <button id="cancelEditBtn" type="button" class="secondary" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
-          <button type="button" class="secondary" onclick="exportScheduleCsv()">Export CSV</button>
+          <button type="button" class="secondary" onclick="exportScheduleCsv()">Export Schedule CSV</button>
+          <button type="button" class="secondary" onclick="openCourseOfferingsExport()">Prepare Course Offerings Export</button>
           <button type="button" class="secondary" onclick="window.print()">Print / Save PDF</button>
           <button type="button" class="danger" onclick="clearSchedule()">Clear Schedule</button>
         </div>
@@ -737,6 +802,47 @@
       <section class="panel faculty-load-panel">
         <h2>Faculty Load Summary</h2>
         <div id="facultyLoadSummary"></div>
+      </section>
+
+      <section class="panel export-panel" id="courseOfferingsExportPanel">
+        <h2>Course Offerings Export Setup</h2>
+        <p class="help-text" style="margin-top:0;">Review the extra fields needed for the Course Offerings template, then export a CSV in the same column order. Open the CSV in Excel or paste the rows into the official template.</p>
+        <div class="export-toolbar">
+          <div>
+            <label for="exportDivisionName">Division name</label>
+            <input id="exportDivisionName" type="text" value="Health & Science" />
+          </div>
+          <div>
+            <label for="exportDivCode">Div column</label>
+            <input id="exportDivCode" type="text" value="H&S" />
+          </div>
+          <div>
+            <label for="exportDefaultLoad">Default load</label>
+            <select id="exportDefaultLoad">
+              <option>In Load</option>
+              <option>OverLoad</option>
+              <option>Adjunct</option>
+            </select>
+          </div>
+          <div>
+            <label for="exportDefaultCap">Default cap</label>
+            <input id="exportDefaultCap" type="text" value="20" />
+          </div>
+          <div>
+            <label for="exportDefaultSession">Default session</label>
+            <select id="exportDefaultSession">
+              <option>F1</option>
+              <option>F2</option>
+              <option>F3</option>
+            </select>
+          </div>
+        </div>
+        <div class="buttons" style="margin-top:0; margin-bottom:12px;">
+          <button type="button" class="secondary" onclick="applyExportDefaults()">Apply Defaults to Blank Fields</button>
+          <button type="button" onclick="exportCourseOfferingsCsv()">Export Course Offerings CSV</button>
+          <button type="button" class="secondary" onclick="closeCourseOfferingsExport()">Hide Export Setup</button>
+        </div>
+        <div id="courseOfferingsExportTable"></div>
       </section>
     </main>
   </div>
@@ -1635,11 +1741,20 @@
     const scheduleStatus = document.getElementById("scheduleStatus");
     const scheduleTable = document.getElementById("scheduleTable");
     const facultyLoadSummary = document.getElementById("facultyLoadSummary");
+    const courseOfferingsExportPanel = document.getElementById("courseOfferingsExportPanel");
+    const courseOfferingsExportTable = document.getElementById("courseOfferingsExportTable");
+    const exportDivisionName = document.getElementById("exportDivisionName");
+    const exportDivCode = document.getElementById("exportDivCode");
+    const exportDefaultLoad = document.getElementById("exportDefaultLoad");
+    const exportDefaultCap = document.getElementById("exportDefaultCap");
+    const exportDefaultSession = document.getElementById("exportDefaultSession");
+    let courseOfferingsExportSettings = JSON.parse(localStorage.getItem("shcCourseOfferingsExportSettingsV1")) || { defaults: { divisionName: "Health & Science", divCode: "H&S", load: "In Load", cap: "20", session: "F1" }, rows: {} };
 
     function saveAll() {
       localStorage.setItem("shcDepartmentOfferedCodesV7", JSON.stringify(offeredCodes));
       localStorage.setItem("shcDepartmentScheduledV7", JSON.stringify(scheduled));
       localStorage.setItem("shcDepartmentFacultyColorsV7", JSON.stringify(facultyColors));
+      localStorage.setItem("shcCourseOfferingsExportSettingsV1", JSON.stringify(courseOfferingsExportSettings));
     }
 
     function byCatalogOrder(codes) {
@@ -2112,6 +2227,7 @@
       renderStatus();
       renderFacultyLoadSummary();
       updateEditControls();
+      if (courseOfferingsExportPanel && courseOfferingsExportPanel.classList.contains("active")) renderCourseOfferingsExportPanel();
     }
 
     function updateEditControls() {
@@ -2163,6 +2279,230 @@
       scheduled = [];
       saveAll();
       renderAll();
+    }
+
+
+    function getExportDefaults() {
+      return courseOfferingsExportSettings.defaults || { divisionName: "Health & Science", divCode: "H&S", load: "In Load", cap: "20", session: "F1" };
+    }
+
+    function getExportRowSettings(item) {
+      const defaults = getExportDefaults();
+      const saved = (courseOfferingsExportSettings.rows || {})[item.id] || {};
+      return {
+        load: saved.load || defaults.load || "In Load",
+        cap: saved.cap || defaults.cap || "20",
+        fee: saved.fee || "",
+        notes: saved.notes || "",
+        credits: saved.credits || item.credits || "",
+        session: saved.session || defaults.session || "F1"
+      };
+    }
+
+    function syncExportDefaultInputs() {
+      const defaults = getExportDefaults();
+      if (exportDivisionName) exportDivisionName.value = defaults.divisionName || "Health & Science";
+      if (exportDivCode) exportDivCode.value = defaults.divCode || "H&S";
+      if (exportDefaultLoad) exportDefaultLoad.value = defaults.load || "In Load";
+      if (exportDefaultCap) exportDefaultCap.value = defaults.cap || "20";
+      if (exportDefaultSession) exportDefaultSession.value = defaults.session || "F1";
+    }
+
+    function collectExportDefaultsFromInputs() {
+      if (!courseOfferingsExportSettings.defaults) courseOfferingsExportSettings.defaults = {};
+      courseOfferingsExportSettings.defaults.divisionName = exportDivisionName ? exportDivisionName.value.trim() || "Health & Science" : "Health & Science";
+      courseOfferingsExportSettings.defaults.divCode = exportDivCode ? exportDivCode.value.trim() || "H&S" : "H&S";
+      courseOfferingsExportSettings.defaults.load = exportDefaultLoad ? exportDefaultLoad.value : "In Load";
+      courseOfferingsExportSettings.defaults.cap = exportDefaultCap ? exportDefaultCap.value.trim() || "20" : "20";
+      courseOfferingsExportSettings.defaults.session = exportDefaultSession ? exportDefaultSession.value : "F1";
+    }
+
+    function collectExportRowsFromTable() {
+      if (!courseOfferingsExportTable) return;
+      if (!courseOfferingsExportSettings.rows) courseOfferingsExportSettings.rows = {};
+      courseOfferingsExportTable.querySelectorAll("tr[data-export-id]").forEach(row => {
+        const id = row.dataset.exportId;
+        courseOfferingsExportSettings.rows[id] = {
+          load: row.querySelector('[data-field="load"]')?.value || "In Load",
+          cap: row.querySelector('[data-field="cap"]')?.value || "20",
+          fee: row.querySelector('[data-field="fee"]')?.value || "",
+          notes: row.querySelector('[data-field="notes"]')?.value || "",
+          credits: row.querySelector('[data-field="credits"]')?.value || "",
+          session: row.querySelector('[data-field="session"]')?.value || "F1"
+        };
+      });
+    }
+
+    function saveExportSettingsFromUi() {
+      collectExportDefaultsFromInputs();
+      collectExportRowsFromTable();
+      saveAll();
+    }
+
+    function openCourseOfferingsExport() {
+      if (!scheduled.length) { alert("No scheduled courses to export yet."); return; }
+      syncExportDefaultInputs();
+      renderCourseOfferingsExportPanel();
+      courseOfferingsExportPanel.classList.add("active");
+      courseOfferingsExportPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeCourseOfferingsExport() {
+      saveExportSettingsFromUi();
+      courseOfferingsExportPanel.classList.remove("active");
+    }
+
+    function applyExportDefaults() {
+      collectExportDefaultsFromInputs();
+      const defaults = getExportDefaults();
+      if (!courseOfferingsExportSettings.rows) courseOfferingsExportSettings.rows = {};
+      scheduled.forEach(item => {
+        const current = courseOfferingsExportSettings.rows[item.id] || {};
+        courseOfferingsExportSettings.rows[item.id] = {
+          load: current.load || defaults.load,
+          cap: current.cap || defaults.cap,
+          fee: current.fee || "",
+          notes: current.notes || "",
+          credits: current.credits || item.credits || "",
+          session: current.session || defaults.session
+        };
+      });
+      saveAll();
+      renderCourseOfferingsExportPanel();
+    }
+
+    function updateExportField(id, field, value) {
+      if (!courseOfferingsExportSettings.rows) courseOfferingsExportSettings.rows = {};
+      if (!courseOfferingsExportSettings.rows[id]) courseOfferingsExportSettings.rows[id] = {};
+      courseOfferingsExportSettings.rows[id][field] = value;
+      saveAll();
+    }
+
+    function updateExportDefaults() {
+      collectExportDefaultsFromInputs();
+      saveAll();
+    }
+
+    function courseParts(item) {
+      const display = item.displayCode || formatCourseCode(item.courseCode);
+      const match = display.match(/^([A-Z]+)\s*(\d+[A-Z]?)$/i);
+      if (match) return { des: match[1].toUpperCase(), number: match[2] };
+      const compact = item.courseCode || display.replace(/\s+/g, "");
+      const compactMatch = compact.match(/^([A-Z]+)(\d+[A-Z]?)$/i);
+      return compactMatch ? { des: compactMatch[1].toUpperCase(), number: compactMatch[2] } : { des: item.courseCode, number: "" };
+    }
+
+    function buildingRoomParts(room) {
+      const match = String(room || "").match(/^([A-Za-z]+)\s*0*(\d+)$/);
+      if (!match) return { building: room || "", room: "" };
+      return { building: match[1].toUpperCase(), room: match[2] };
+    }
+
+    function templateMeetingDays(pattern) {
+      return String(pattern || "").replace(/\s*Lab$/i, "").trim();
+    }
+
+    function templateTime(time) {
+      const [hour, minute] = time.split(":").map(Number);
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${String(displayHour).padStart(2, "0")}${String(minute).padStart(2, "0")} ${suffix}`;
+    }
+
+    function renderCourseOfferingsExportPanel() {
+      if (!courseOfferingsExportTable) return;
+      syncExportDefaultInputs();
+      if (!scheduled.length) {
+        courseOfferingsExportTable.innerHTML = `<p class="empty">No scheduled sections yet.</p>`;
+        return;
+      }
+      const rowsHtml = scheduled.map(item => {
+        const settings = getExportRowSettings(item);
+        const parts = courseParts(item);
+        const room = buildingRoomParts(item.room);
+        return `
+          <tr data-export-id="${escapeHtml(item.id)}">
+            <td class="readonly">${escapeHtml(item.courseLabel)}</td>
+            <td class="readonly">${escapeHtml(parts.des)}</td>
+            <td class="readonly">${escapeHtml(parts.number)}</td>
+            <td class="readonly">${escapeHtml(item.section)}</td>
+            <td class="readonly">${escapeHtml(item.courseTitle)}</td>
+            <td class="readonly">${escapeHtml(lastName(item.faculty))}</td>
+            <td>
+              <select data-field="load" onchange="updateExportField('${escapeHtml(item.id)}','load',this.value)">
+                ${["In Load", "OverLoad", "Adjunct"].map(opt => `<option ${settings.load === opt ? "selected" : ""}>${opt}</option>`).join("")}
+              </select>
+            </td>
+            <td><input class="small-input" data-field="cap" type="text" value="${escapeHtml(settings.cap)}" onchange="updateExportField('${escapeHtml(item.id)}','cap',this.value)" /></td>
+            <td class="readonly">${escapeHtml(templateMeetingDays(item.pattern))}</td>
+            <td class="readonly">${escapeHtml(templateTime(item.start))}</td>
+            <td class="readonly">${escapeHtml(templateTime(item.end))}</td>
+            <td class="readonly">${escapeHtml(room.building)}</td>
+            <td class="readonly">${escapeHtml(room.room)}</td>
+            <td><input class="small-input" data-field="fee" type="text" value="${escapeHtml(settings.fee)}" onchange="updateExportField('${escapeHtml(item.id)}','fee',this.value)" /></td>
+            <td><input class="notes-input" data-field="notes" type="text" value="${escapeHtml(settings.notes)}" onchange="updateExportField('${escapeHtml(item.id)}','notes',this.value)" /></td>
+            <td><input class="small-input" data-field="credits" type="text" value="${escapeHtml(settings.credits)}" onchange="updateExportField('${escapeHtml(item.id)}','credits',this.value)" /></td>
+            <td>
+              <select data-field="session" onchange="updateExportField('${escapeHtml(item.id)}','session',this.value)">
+                ${["F1", "F2", "F3"].map(opt => `<option ${settings.session === opt ? "selected" : ""}>${opt}</option>`).join("")}
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      courseOfferingsExportTable.innerHTML = `
+        <div class="export-table-wrap">
+          <table class="export-table">
+            <thead>
+              <tr>
+                <th>Course</th><th>Des</th><th>Crs #</th><th>Sec #</th><th>Course Title</th><th>Instructor</th>
+                <th>Load</th><th>Cap</th><th>Mtg Days</th><th>Start</th><th>End</th><th>Bldg</th><th>Rm</th><th>Fee</th><th>Notes / prereqs</th><th>Cr Hrs</th><th>Session</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function buildCourseOfferingRows() {
+      saveExportSettingsFromUi();
+      const defaults = getExportDefaults();
+      const headerRow1 = ["Course Offerings: ", "", "", "", "", "DIVISION:", defaults.divisionName || "Health & Science", "", "", "", "", "", "", "", "", "", ""];
+      const headerRow2 = ["Div", "Des", "Crs #", "Sec #", "Course Title", "Instructor", "Adjunct, In Load, OverLoad", "Cap", "Mtg Days", "Start Time", "End Time", "Pref Bldg", "Pref Rm", "Fee", "Cross Listed (Trad/Grad) /Notes/Prerequisites.", "Cr Hrs", "Session - F1 = Full Semester (default), F2 = First 7-weeks, or F3 = Second 7-weeks"];
+      const bodyRows = scheduled.map(item => {
+        const settings = getExportRowSettings(item);
+        const parts = courseParts(item);
+        const room = buildingRoomParts(item.room);
+        return [
+          defaults.divCode || "H&S",
+          parts.des,
+          parts.number,
+          item.section,
+          item.courseTitle,
+          lastName(item.faculty),
+          settings.load,
+          settings.cap,
+          templateMeetingDays(item.pattern),
+          templateTime(item.start),
+          templateTime(item.end),
+          room.building,
+          room.room,
+          settings.fee,
+          settings.notes,
+          settings.credits || item.credits,
+          settings.session
+        ];
+      });
+      return [headerRow1, headerRow2, ...bodyRows];
+    }
+
+    function exportCourseOfferingsCsv() {
+      if (!scheduled.length) { alert("No scheduled courses to export."); return; }
+      const rows = buildCourseOfferingRows();
+      const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+      downloadTextFile(csv, "shc-course-offerings-template-export.csv", "text/csv");
     }
 
     function exportScheduleCsv() {
@@ -2237,6 +2577,11 @@
       if (window.CSS && CSS.escape) return CSS.escape(value);
       return String(value).replace(/"/g, '\"');
     }
+
+
+    [exportDivisionName, exportDivCode, exportDefaultLoad, exportDefaultCap, exportDefaultSession].forEach(input => {
+      if (input) input.addEventListener("change", updateExportDefaults);
+    });
 
     courseSearch.addEventListener("input", renderCoursePicker);
     populateStaticSelects();
